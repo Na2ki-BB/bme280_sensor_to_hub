@@ -64,15 +64,18 @@ class BME280:
 
     def read(self) -> tuple[float, float, float]:
         """Trigger a forced measurement, returns (temperature_c, humidity_pct, pressure_hpa)."""
-        self._bus.write_byte_data(self._address, _REG_CTRL_HUM, _OVERSAMPLING_X1)
-        self._bus.write_byte_data(
-            self._address,
-            _REG_CTRL_MEAS,
-            (_OVERSAMPLING_X1 << 5) | (_OVERSAMPLING_X1 << 2) | _MODE_FORCED,
-        )
-        self._wait_until_measuring_done()
+        try:
+            self._bus.write_byte_data(self._address, _REG_CTRL_HUM, _OVERSAMPLING_X1)
+            self._bus.write_byte_data(
+                self._address,
+                _REG_CTRL_MEAS,
+                (_OVERSAMPLING_X1 << 5) | (_OVERSAMPLING_X1 << 2) | _MODE_FORCED,
+            )
+            self._wait_until_measuring_done()
+            data = self._bus.read_i2c_block_data(self._address, _REG_DATA, 8)
+        except OSError as exc:
+            raise BME280Error(f"I2C communication with BME280 failed: {exc}") from exc
 
-        data = self._bus.read_i2c_block_data(self._address, _REG_DATA, 8)
         raw_pressure = (data[0] << 12) | (data[1] << 4) | (data[2] >> 4)
         raw_temperature = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
         raw_humidity = (data[6] << 8) | data[7]

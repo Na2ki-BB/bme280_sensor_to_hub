@@ -3,7 +3,7 @@ import struct
 import pytest
 
 from bme280_sensor_to_hub import driver
-from bme280_sensor_to_hub.driver import BME280
+from bme280_sensor_to_hub.driver import BME280, BME280Error
 
 _ADDRESS = 0x76
 
@@ -167,6 +167,22 @@ def test_read_triggers_forced_mode_measurement(monkeypatch):
             (driver._OVERSAMPLING_X1 << 5) | (driver._OVERSAMPLING_X1 << 2) | driver._MODE_FORCED,
         ),
     ]
+
+
+def test_read_wraps_i2c_errors_in_bme280error(monkeypatch):
+    registers = _build_registers(_CALIB, _ADC_T, _ADC_P, _ADC_H)
+    fake_bus = _FakeSMBus(registers)
+    monkeypatch.setattr(driver, "SMBus", lambda bus: fake_bus)
+
+    sensor = BME280(bus=1, address=_ADDRESS)
+
+    def _raise(*args, **kwargs):
+        raise OSError("simulated I2C failure")
+
+    monkeypatch.setattr(fake_bus, "read_i2c_block_data", _raise)
+
+    with pytest.raises(BME280Error):
+        sensor.read()
 
 
 def test_close_closes_underlying_bus(monkeypatch):

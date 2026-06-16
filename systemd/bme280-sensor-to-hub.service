@@ -1,0 +1,15 @@
+[Unit]
+Description=BME280 sensor to raspi-esp32-status-panel hub
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/bme280_sensor_to_hub
+EnvironmentFile=/opt/bme280_sensor_to_hub/.env
+ExecStart=/opt/bme280_sensor_to_hub/.venv/bin/python -m bme280_sensor_to_hub
+Restart=on-failure
+RestartSec=5
+User=pi
+
+[Install]
+WantedBy=multi-user.target

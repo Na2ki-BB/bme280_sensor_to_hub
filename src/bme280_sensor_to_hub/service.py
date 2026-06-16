@@ -30,6 +30,9 @@ def run() -> None:
                 logger.exception("failed to read BME280, keeping previous status file")
             else:
                 lines = _build_lines(temperature_c, humidity_pct, pressure_hpa)
-                write_status(config.hub_data_dir, lines)
+                try:
+                    write_status(config.hub_data_dir, lines)
+                except OSError:
+                    logger.exception("failed to write status file, keeping previous status file")
 
             time.sleep(config.poll_interval_sec)

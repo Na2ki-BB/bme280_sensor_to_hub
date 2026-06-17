@@ -4,12 +4,19 @@ After=network.target
 
 [Service]
 Type=simple
-WorkingDirectory=/opt/bme280_sensor_to_hub
-EnvironmentFile=/opt/bme280_sensor_to_hub/.env
-ExecStart=/opt/bme280_sensor_to_hub/.venv/bin/python -m bme280_sensor_to_hub
+
+# --- 以下の3行は実際にデプロイしたパスに書き換えてください ---
+# 例: /home/pi/bme280_sensor_to_hub
+WorkingDirectory=/path/to/bme280_sensor_to_hub
+EnvironmentFile=/path/to/bme280_sensor_to_hub/.env
+ExecStart=/path/to/bme280_sensor_to_hub/.venv/bin/python -m bme280_sensor_to_hub
+
+# --- サービスを実行するユーザー名に書き換えてください ---
+# 例: pi, satomi など (whoami コマンドで確認できます)
+User=YOUR_USER
+
 Restart=on-failure
 RestartSec=5
-User=pi
 
 [Install]
 WantedBy=multi-user.target

@@ -179,7 +179,7 @@ def test_read_wraps_i2c_errors_in_bme280error(monkeypatch):
     def _raise(*args, **kwargs):
         raise OSError("simulated I2C failure")
 
-    monkeypatch.setattr(fake_bus, "read_i2c_block_data", _raise)
+    monkeypatch.setattr(fake_bus, "read_byte_data", _raise)
 
     with pytest.raises(BME280Error):
         sensor.read()

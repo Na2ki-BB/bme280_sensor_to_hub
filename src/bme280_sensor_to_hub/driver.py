@@ -72,7 +72,7 @@ class BME280:
                 (_OVERSAMPLING_X1 << 5) | (_OVERSAMPLING_X1 << 2) | _MODE_FORCED,
             )
             self._wait_until_measuring_done()
-            data = self._bus.read_i2c_block_data(self._address, _REG_DATA, 8)
+            data = self._read_block(_REG_DATA, 8)
         except OSError as exc:
             raise BME280Error(f"I2C communication with BME280 failed: {exc}") from exc
 
@@ -94,14 +94,24 @@ class BME280:
             time.sleep(0.01)
         raise BME280Error("sensor did not finish measuring in time")
 
+    def _read_block(self, register: int, length: int) -> list[int]:
+        """Read `length` consecutive bytes one at a time.
+
+        The Raspberry Pi (BCM2835) I2C controller raises Errno 5 on
+        multi-byte block reads on this setup, while single-byte reads
+        are reliable. The sensor runs in forced mode, so the data
+        registers hold a single completed measurement and reading them
+        individually carries no consistency risk.
+        """
+        return [
+            self._bus.read_byte_data(self._address, register + offset)
+            for offset in range(length)
+        ]
+
     def _read_calibration(self) -> _Calibration:
-        # Split into two ≤16-byte reads to stay within the BCM2835 I2C FIFO size.
-        calib_1 = (
-            self._bus.read_i2c_block_data(self._address, _REG_CALIB_1, 16)
-            + self._bus.read_i2c_block_data(self._address, _REG_CALIB_1 + 16, 8)
-        )
+        calib_1 = self._read_block(_REG_CALIB_1, 24)
         dig_h1 = self._bus.read_byte_data(self._address, _REG_DIG_H1)
-        calib_2 = self._bus.read_i2c_block_data(self._address, _REG_CALIB_2, 7)
+        calib_2 = self._read_block(_REG_CALIB_2, 7)
 
         (
             dig_t1,

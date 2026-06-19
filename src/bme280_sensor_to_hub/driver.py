@@ -95,7 +95,11 @@ class BME280:
         raise BME280Error("sensor did not finish measuring in time")
 
     def _read_calibration(self) -> _Calibration:
-        calib_1 = self._bus.read_i2c_block_data(self._address, _REG_CALIB_1, 24)
+        # Split into two ≤16-byte reads to stay within the BCM2835 I2C FIFO size.
+        calib_1 = (
+            self._bus.read_i2c_block_data(self._address, _REG_CALIB_1, 16)
+            + self._bus.read_i2c_block_data(self._address, _REG_CALIB_1 + 16, 8)
+        )
         dig_h1 = self._bus.read_byte_data(self._address, _REG_DIG_H1)
         calib_2 = self._bus.read_i2c_block_data(self._address, _REG_CALIB_2, 7)
 
